@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Guess a number!</title>
+<style>
+body { background-color: green; color: white; }
+a { color: white; }
+</style>
+<script>
+(function() {
+  var number = Math.floor(Math.random() * 100);
+  var name = prompt("Hi! What's your name?");
+  var answer = -1;
+  while (answer != number) {
+    answer = prompt(name + ", I have generated a random number from 0 to 100 for you. Try to guess it!");
+    if (answer === null) {
+      break;
+    } else if (answer > number) {
+      alert(answer + "? It's too high!");
+    } else if (answer < number) {
+      alert(answer + " is too low.");
+    } 
+  }
+  if (answer == number) {
+    alert("That's it! You won!");
+  }
+})();
+</script>
+</head>
+<body>
+<h1>Guess a number!</h1>
+<p>Refresh to play again.</p>
+<em><a href="http://dosowisko.net/">dosowisko.net</a></em>
+</body>
+</html>
