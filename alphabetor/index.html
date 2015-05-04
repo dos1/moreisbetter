@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Alphabetor</title>
+<style>
+  @font-face {
+    font-family: 'Colored Crayons';
+    src: url('coloredcrayons.ttf') format('truetype');
+  }
+  body { font-family: 'Colored Crayons', cursive, sans-serif; 
+font-size: 20vh; 
+background-image: url('chalkboard.jpg'); 
+background-size: cover cover;
+text-align: center; 
+color: white;
+}
+a { color: white; }
+
+h1 { font-size: 1em; font-weight: normal; margin-bottom: 0.1em; }
+p { font-size: 0.33em; }
+
+small p {
+  font-size: 0.2em; margin: 0.2em;
+}
+.last p {
+  font-size: 0.3em;
+}
+
+.letter { font-size: 1.33em; }
+
+@-webkit-keyframes shadow {
+  0% { text-shadow: none; }
+  10% { text-shadow: 1px 0px rgba(255,255,255,0.9); }
+  25% { text-shadow: 1px 1px rgba(255,255,255,0.88); }
+  75% { text-shadow: -1px -1px rgba(255,255,255,0.75); }
+  90% { text-shadow: 0px 1px rgba(255,255,255,0.8); }
+}
+@keyframes shadow {
+  0% { text-shadow: none; }
+  10% { text-shadow: 1px 0px rgba(255,255,255,0.9); }
+  25% { text-shadow: 1px 1px rgba(255,255,255,0.88); }
+  75% { text-shadow: -1px -1px rgba(255,255,255,0.75); }
+  90% { text-shadow: 0px 1px rgba(255,255,255,0.8); }
+}
+
+body {
+  -webkit-animation-name: shadow;
+  -webkit-animation-duration: 400ms;
+  -webkit-animation-iteration-count:infinite;
+  animation-name: shadow;
+  animation-duration: 400ms;
+  animation-iteration-count:infinite;
+}
+audio[src="hepcats.ogg"] {
+  position: fixed; bottom: 0; width: 100%; left: 0;
+}
+.screen2, .last { display: none; }
+</style>
+<script src="jquery.js"></script>
+<script>
+// @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&dn=gpl-3.0.txt GPL-v3-or-Later
+
+$(function() {
+
+  var started = false;
+
+  var char, lives = 3, score = 0, lasttime = 0;
+
+  function genChar() {
+    char = String.fromCharCode(Math.floor(Math.random() * (90-66)) + 66);
+    $('.letter').text(char);
+    $('.points').text(score);
+    var xxx = '';
+    for (var i=0; i<lives; i++) {
+      xxx = xxx + 'X ';
+    }
+    $('.lives').text(xxx);
+    lasttime = Date.now();
+  }
+
+  function checkChar(ch) {
+    if (ch === char) {
+      score = score + Math.max(0, 5000 - (Date.now() - lasttime));
+      genChar();
+      $('audio[src="yay.ogg"]')[0].currentTime = 0;
+      $('audio[src="yay.ogg"]')[0].play();
+    } else { 
+      lives--;
+      if (lives < 0) {
+        started = false;
+        $('.lastscore').text(score);
+        score = 0; lives = 3;
+        $('.screen2').hide(); $('.screen1').show();
+        $('.last').show();
+      } else {
+        genChar();
+      }
+      $('audio[src="boo.ogg"]')[0].currentTime = 0;
+      $('audio[src="boo.ogg"]')[0].play();
+    }
+  }
+
+  $('body').on('keydown', function(ev) {
+    if (!started) {
+      if (ev.which == 13) {
+        $('.screen1').hide(); $('.screen2').show();
+        $('audio[src="yay.ogg"]')[0].play();
+        started = true;
+        genChar();
+      }
+    } else {
+      if ((ev.which >= 65) && (ev.which <= 90)) {
+        checkChar(String.fromCharCode(ev.which - 1));
+      }
+    }
+  });
+});
+</script>
+</head>
+<body>
+
+<div class="screen1">
+
+<h1>Alphabetor</h1>
+<small><p>For a given letter of the alphabet you have to press<br/>the key with succeeding one as fast as possible!</p></small>
+<small class="last"><p><br/>You lost! Score: <span class="lastscore">69</span></p></small>
+<p>Press ENTER to start...</p>
+<small>
+<p>Made for <a target="_blank" href="https://itch.io/jam/moreisbetter">More is Better Jam</a></p>
+<p><em><a target="_blank" href="http://dosowisko.net/">dosowisko.net</a></em></p>
+</small>
+
+</div>
+
+<div class="screen2">
+<h1 class="letter">A</h1>
+<p>Points: <span class="points">0</span> | <span class="lives">X X X</span></p>
+</div>
+
+<audio preload="auto" src="yay.ogg"></audio>
+<audio preload="auto" src="boo.ogg"></audio>
+
+<audio autoplay controls loop src="hepcats.ogg"></audio>
+</body>
+</html>
