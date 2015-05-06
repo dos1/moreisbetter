@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Do not press the button</title>
+</head>
+<style>
+body { text-align: center; font-family: serif; }
+.button {
+  display: inline-block;
+  width: 181px;
+  height: 186px;
+  background-image: url('button.png');
+  background-position: 0px 0px;
+}
+.button:hover {
+  opacity: 0.9;
+}
+.button:active {
+  background-position: 0px -186px;
+}
+</style>
+<script>
+(function() {
+  var time = Date.now();
+
+  document.addEventListener("DOMContentLoaded", function(event) {
+    document.querySelector('.button').addEventListener("click", function(event) {
+      alert("You lost! Score: " + (Date.now() - time));
+      time = Date.now();
+      event.preventDefault();
+    });
+  });
+})();
+</script>
+<body>
+<h1>Do not press the button</h1>
+<a href="#" class="button"></a>
+</body>
+</html>
