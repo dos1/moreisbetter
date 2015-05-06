@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Pipeless Bird</title>
+<script src="pixi.min.js"></script>
+<style>
+  @font-face {
+    font-family: 'Flappy Birdy';
+    src: url('FlappyBirdy.ttf') format('truetype');
+  }
+
+  @font-face {
+    font-family: 'Gamegirl';
+    src: url('Gamegirl.ttf') format('truetype');
+  }
+
+canvas { margin: 0 auto; }
+</style>
+</head>
+<body>
+  <script>
+
+    function playSound(sound) {
+      var audio = document.querySelector('audio[src="'+sound+'.ogg"]');
+      try {
+        audio.currentTime = 0;
+        audio.play();
+      } catch (e) {};
+    }
+ 
+    // create a renderer instance.
+    var renderer = PIXI.autoDetectRenderer(288, 512);
+ 
+    var stage = new PIXI.Container();
+
+    var lost = false;
+
+    var counter = 0, score = 0, deadcounter, accellock = false;
+
+    // add the renderer view element to the DOM
+    document.body.appendChild(renderer.view);
+ 
+    var acceleration = 0;
+
+    var bgTexture = PIXI.Texture.fromImage("bg.png");
+    var bg = new PIXI.Sprite(bgTexture);
+    bg.position.x = 0;
+    bg.position.y = 0;
+    stage.addChild(bg);
+
+    var bottomTexture = PIXI.Texture.fromImage("bottom.png");
+    var bottom1 = new PIXI.Sprite(bottomTexture);
+    var bottom2 = new PIXI.Sprite(bottomTexture);
+    bottom1.anchor.x = 0.0;
+    bottom1.anchor.y = 1.0;
+    bottom2.anchor.x = 0.0;
+    bottom2.anchor.y = 1.0;
+    bottom1.position.x = 0;
+    bottom1.position.y = 512;
+    bottom2.position.x = 336;
+    bottom2.position.y = 512;
+    stage.addChild(bottom1);
+    stage.addChild(bottom2);
+
+    var birdTex1 = PIXI.Texture.fromImage("flappy1.png");
+    var birdTex2 = PIXI.Texture.fromImage("flappy2.png");
+    var birdTex3 = PIXI.Texture.fromImage("flappy3.png");
+    var bird = new PIXI.extras.MovieClip([birdTex1, birdTex3, birdTex2, birdTex3]);
+    bird.position.x = 144;
+    bird.position.y = 256;
+    bird.anchor.x = 0.5;
+    bird.anchor.y = 0.5;
+    bird.animationSpeed = 0.2;
+    bird.play();
+
+    var text = new PIXI.Text("PipelessBird 0", {font:"64px Flappy Birdy", fill:"white"});
+    text.anchor.x = 0.5;
+    text.anchor.y = 0.5;
+    text.position.x = 144;
+    text.position.y = 106;
+    stage.addChild(text);
+
+    var text2 = new PIXI.Text("Score: 0", {font:"16px Gamegirl", fill:"white"});
+    text2.anchor.x = 0.5;
+    text2.anchor.y = 0.5;
+    text2.position.x = 144;
+    text2.position.y = 156;
+    stage.addChild(text2);
+
+    stage.addChild(bird);
+
+    function dosowisko() {
+      window.open("http://dosowisko.net/");
+    }
+
+    var text3 = new PIXI.Text("dosowisko.net", {font:"16px Gamegirl", fill:"white"});
+    text3.anchor.x = 0.5;
+    text3.anchor.y = 1.0;
+    text3.position.x = 144;
+    text3.position.y = 506;
+    text3.interactive = true;
+    text3.buttonMode = true;
+    text3.defaultCursor = 'pointer';
+    text3.click = dosowisko;
+    text3.tap = dosowisko;
+    stage.addChild(text3);
+
+
+    function flap() {
+      accellock = false;
+      if (lost) {
+        if (deadcounter > 30) {
+          lost = false;
+          bird.position.y = 256;
+          acceleration = -6;
+          score = 0;
+          counter = 0;
+          text2.text = "Score: " + score;
+          bird.gotoAndPlay(0);
+          playSound('wing');
+        }
+      } else {
+        acceleration = -6;
+        bird.gotoAndPlay(0);
+        playSound('wing');
+      }
+    }
+
+    bg.interactive = true;
+    bg.mousedown = flap;
+    bg.touchstart = flap;
+    var allowed = true;
+    window.addEventListener("keydown", function() {
+      if (allowed) flap(); allowed = false;
+    });
+    window.addEventListener("keyup", function() {
+      allowed = true;
+    });
+
+
+    requestAnimationFrame( animate );
+
+    function animate() {
+ 
+        requestAnimationFrame( animate );
+ 
+        if (!lost) {
+
+          bottom1.position.x--;
+          bottom2.position.x--;
+
+          if (bottom2.position.x === 0) {
+            bottom1.position.x = 0;
+            bottom2.position.x = 336;
+          }
+          bird.position.y += acceleration;
+          acceleration = acceleration + 0.5;
+
+          bird.rotation = Math.min(acceleration / 10, Math.PI / 2);
+
+          if ((acceleration > 12) && (!accellock)) {
+            accellock = true;
+            playSound('swoosh');
+          }
+
+          if (bird.position.y >= 385) {
+            bird.position.y = 385;
+            bird.stop();
+            lost = true;
+            deadcounter = 0;
+            playSound('hit');
+          }
+
+          counter++;
+          if (counter == 90) {
+            score++;
+            counter = 0;
+            text2.text = "Score: " + score;
+            playSound('point');
+          }
+
+        } else { // dead
+          deadcounter++;
+        }
+
+        text.updateText();
+        text2.updateText();
+        text3.updateText();
+
+        // render the stage   
+        renderer.render(stage);
+    }
+ 
+  </script>
+
+<audio preload="auto" src="swoosh.ogg"></audio>
+<audio preload="auto" src="hit.ogg"></audio>
+<audio preload="auto" src="point.ogg"></audio>
+<audio preload="auto" src="wing.ogg"></audio>
+
+
+</body>
+</html>
