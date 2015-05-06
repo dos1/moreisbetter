@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tic-Tac-Noe</title>
+<style>
+  @font-face {
+    font-family: 'Cheveuxdange';
+    src: url('cheveuxdange.medium.ttf') format('truetype');
+  }
+body { background-color: #f6f6f6; font-family: "Cheveuxdange", cursive, sans-serif; font-size: 50px; text-align: center; }
+a { color: black; text-decoration: none; border-bottom: 1px solid #aaa; }
+table { margin: 0 auto; }
+h1 { font-weight: normal; font-size: 2em; margin-bottom: 0.25em; }
+table { user-select: none; -moz-user-select: none; -webkit-user-select: none; }
+td {
+  width: 150px;
+  height: 150px;
+  background-color: transparent;
+  border-right: 2px solid #aaa;
+  border-bottom: 2px solid #aaa;
+  font-size: 120px;
+}
+td:hover {
+  cursor: pointer;
+  background-color: #eee;
+}
+td:last-child {
+  border-right: none;
+}
+tr:last-child td {
+  border-bottom: none;
+}
+.buttons {  margin:0 ; font-size: 0.75em; margin-bottom: 1em;}
+.buttons .active { background-color: #ccc; padding: 0 0.5em; cursor: default; border-radius: 0.5em; }
+.placeholder { pointer-events: none; opacity: 0.25; }
+small { display: inline-block; width: 400px; font-size: 0.5em; font-weight: normal; font-style: italic; }
+small p { margin-bottom: 0; }
+.link { margin-top: 0.5em; }
+</style>
+
+<script src="jquery.js"></script>
+
+<script>
+$(function() {
+  var current = 'o', cpu = 'x', single = true, lock = false;
+
+  function shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex ;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  }
+
+  function newGame() {
+    current = 'o';
+    if (cpu == 'o') cpu = 'x'; else cpu = 'o';
+    $('td').text('');
+  }
+
+  function checkRow(a, b, c) {
+    if (lock) return;
+
+    if (($('#a'+a).text().toLowerCase() == $('#a'+b).text().toLowerCase()) && ($('#a'+b).text().toLowerCase() == $('#a'+c).text().toLowerCase())) {
+      var winner = $('#a'+a).text().trim();
+      if (winner) {
+        alert('Game over - ' + winner.toUpperCase() + ' wins!');
+        newGame();
+        lock=true;
+      }
+    }
+  }
+
+  function swap() {
+    if (Math.random() >= 0.5) { return; }
+    $('td').each(function() {
+      if ($(this).text().toLowerCase() == 'x') {
+        if (Math.random() >= 0.5) {
+          $(this).text('o');
+        } else {
+          $(this).text('O');
+        }
+      } else if ($(this).text().toLowerCase() == 'o') {
+        if (Math.random() >= 0.5) {
+          $(this).text('x');
+        } else {
+          $(this).text('X');
+        }
+      }
+    });
+    try {
+      $('audio')[0].currentTime = 0;
+      $('audio')[0].play();
+    } catch(e) {};
+  }
+
+  function checkWin() {
+    // oh god
+    checkRow('00', '01', '02');
+    checkRow('10', '11', '12');
+    checkRow('20', '21', '22');
+    checkRow('00', '10', '20');
+    checkRow('01', '11', '21');
+    checkRow('02', '12', '22');
+    checkRow('00', '11', '22');
+    checkRow('20', '11', '02');
+    if (lock) { // OH GOD
+      lock = false;
+      return true;
+    }
+    lock = false;
+
+    var isEmpty = false;
+    $('td').each(function() {
+      if (!($(this).text().trim())) {
+        isEmpty = true;
+        return false;
+      }
+    });
+
+    if (!isEmpty) {
+      alert("Game over - no winner!");
+      newGame();
+      return true;
+    }
+
+    return false;
+  }
+
+  function cpuPlay() {
+    var boxes = shuffle($('td'));
+    $.each(boxes, function() {
+      if (!($(this).text().trim())) {
+
+        if (Math.random() >= 0.5) {
+          $(this).text(current.toUpperCase());
+        } else {
+          $(this).text(current);
+        }
+
+        if (current == 'o') current = 'x'; else current = 'o';
+
+        setTimeout( function() {
+          swap();
+          checkWin();
+
+          $('table').css('pointer-events', 'auto');
+          $('body').css('cursor', 'auto');
+        }, 250);
+
+        return false;
+      }
+    });
+  }
+
+  $('body').on('click', 'td', function() {
+
+    $(this).find('.placeholder').remove();
+
+    if ($(this).text().trim()) { return; }
+
+    if (Math.random() >= 0.5) {
+      $(this).text(current.toUpperCase());
+    } else {
+      $(this).text(current);
+    }
+
+    $('table').css('pointer-events', 'none');
+    $('body, table').css('cursor', 'wait');
+
+    setTimeout( function() {
+
+      swap();
+
+      if (current == 'o') current = 'x'; else current = 'o';
+
+      $('table').css('pointer-events', 'auto');
+      $('body, table').css('cursor', 'auto');
+
+      if (checkWin()) return;
+
+      if (single) {
+
+        $('table').css('pointer-events', 'none');
+        $('body').css('cursor', 'wait');
+
+        setTimeout( cpuPlay, Math.random()*600+400);
+      }
+
+    }, 250);
+
+  }).on('mouseover', 'td', function() {
+    if ($(this).text().trim()) { return; }
+    $(this).append($("<div></div>").addClass('placeholder').text(current));
+  }).on('mouseout', 'td', function() {
+    $(this).find('.placeholder').remove();
+  });
+
+  $('#ai').on('click', function() {
+   single = true;
+   $('#noai').removeClass("active");
+   $('#ai').addClass("active");
+   newGame();
+  });
+  $('#noai').on('click', function() {
+   single = false;
+   $('#ai').removeClass("active");
+   $('#noai').addClass("active");
+   newGame();
+  });
+});
+</script>
+
+</head>
+<body>
+<h1>Tic-Tac-Noe</h1>
+<p class="buttons"><a id="ai" href="#" class="active">1 player</a> / <a id="noai" href="#">2 players</a></p>
+<table>
+<tr><td id="a00"></td><td id="a01"></td><td id="a02"></td></tr>
+<tr><td id="a10"></td><td id="a11"></td><td id="a12"></td></tr>
+<tr><td id="a20"></td><td id="a21"></td><td id="a22"></td></tr>
+</table>
+<small><p>Each turn there's 50% chance of swapping Xes with Oes!</p></small>
+<p class="link"><a href="http://dosowisko.net/" target="_blank">dosowisko.net</a></p>
+<audio preload="auto" src="lazer.ogg"></audio>
+</body>
+</html>
