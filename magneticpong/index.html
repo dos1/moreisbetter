@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Magnetic Pong</title>
+<script src="pixi.min.js"></script>
+<script src="box2d.min.js"></script>
+
+<style>
+html, body { margin: 0; padding: 0; }
+
+@font-face {
+  font-family: "PressStart2P";
+  src: url('PressStart2P.ttf') format('truetype');
+}
+
+canvas { margin: 0 auto; pointer-events: none; }
+</style>
+</head>
+<body>
+  <script>
+
+var MOVE_SPEED = 8;
+  
+  Box2D.Common.b2Settings.b2_velocityThreshold = 0;
+
+    function playSound(sound) {
+      var audio = document.querySelector('audio[src="'+sound+'.ogg"]');
+      try {
+        audio.currentTime = 0;
+        audio.play();
+      } catch (e) {};
+    }
+ 
+    // create a renderer instance.
+    var renderer = PIXI.autoDetectRenderer(640, 480);
+ 
+    var stage = new PIXI.Container();
+
+    var lost = false;
+
+    var counter = 0, score = 0, deadcounter, accellock = false, ai = true;
+
+    var pole = true, poleOpponent = false, started = false, move = 0;
+
+    var b2Vec2 = Box2D.Common.Math.b2Vec2;
+var b2BodyDef = Box2D.Dynamics.b2BodyDef;
+var b2Body = Box2D.Dynamics.b2Body;
+var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+var b2World = Box2D.Dynamics.b2World;
+var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
+    var bodyDef = new b2BodyDef;
+var PADDLE_WALL_DISTANCE = 15.0;
+
+
+function containsAll(array1, array2) {
+  return array1.every(function (v) {
+    return array2.indexOf(v) !== -1;
+  });
+}
+
+function Physics(width, height, ballRadius) {
+  this._height = height;
+  this._width = width;
+  this._ballRadius = ballRadius || 0.2;
+  this._world = null;
+  this._ballScored = function () {
+  };
+  this._paddleFixtures = {};
+  this._init();
+}
+
+
+Physics.prototype.playerType = {
+  TOP : 'top',
+  BOTTOM : 'bottom'
+};
+
+
+/**
+ * add paddle to game
+ * @param playerType [Physics.prototype.playerType] type
+ * @param size [{width, height}] paddle dimensions
+ */
+Physics.prototype.addPaddle = function (playerType, size) {
+  var fixDef = new b2FixtureDef;
+  fixDef.density = 5.0;
+  fixDef.friction = 1;
+  fixDef.restitution = 0;
+  bodyDef.type = b2Body.b2_dynamicBody;
+  bodyDef.position.Set(this._width / 2, 0);
+  fixDef.shape = new b2PolygonShape;
+  fixDef.shape.SetAsBox(size.width / 2, size.height / 2);
+  var paddle = this._world.CreateBody(bodyDef).CreateFixture(fixDef);
+  paddle._size = size;
+  this._paddleFixtures[playerType] = paddle;
+
+  if (playerType === this.playerType.TOP) {
+    this._jointPaddleToWall(paddle, this._topWall, -PADDLE_WALL_DISTANCE);
+  } else {
+    this._jointPaddleToWall(paddle, this._bottomWall, PADDLE_WALL_DISTANCE);
+  }
+};
+
+/**
+ * remove paddle from field
+ * @param playerType left/right
+ */
+Physics.prototype.removePaddle = function (playerType) {
+  this._world.DestroyBody(this._paddleFixtures[playerType].GetBody());
+  delete this._paddleFixtures[playerType];
+};
+
+Physics.prototype._jointPaddleToWall = function (paddleFixture, wallFixture, distanceFromWall) {
+  var jointDef = new Box2D.Dynamics.Joints.b2PrismaticJointDef();
+  jointDef.bodyA = paddleFixture.GetBody();
+  jointDef.bodyB = wallFixture.GetBody();
+  jointDef.collideConnected = false;
+  jointDef.localAxisA.Set(1.0, 0.0);
+  jointDef.localAnchorA.Set(0, distanceFromWall);
+  jointDef.enableMotor = true;
+  jointDef.maxMotorForce = 6;
+  this._world.CreateJoint(jointDef);
+};
+
+/**
+ * Change position and speed of the ball
+ * @param position [{x, y}]
+ * @param speed [Box2D.Common.Math.b2Vec2]
+ */
+Physics.prototype.positionBall = function (position, speed) {
+  this._ball.GetBody().SetPosition(position);
+  this._ball.GetBody().SetLinearVelocity(speed);
+
+};
+
+/**
+ * iteration of physics iteration
+ * @param period [Number] in seconds
+ * @param accuracy [Number] accuracy of collisions and speeds
+ */
+Physics.prototype.tick = function (period, accuracy) {
+  this._world.Step(
+    period   //frame-rate
+    , accuracy       //velocity iterations
+    , accuracy       //position iterations
+  );
+  this._world.ClearForces();
+};
+
+/**
+ * Get positions of game objects
+ * @return {{ball: {x, y}, paddles: Array}}
+ */
+Physics.prototype.getBallAndPaddlePositions = function () {
+  var that = this;
+  var paddles = Object.keys(this._paddleFixtures).map(function (key) {
+    return that._paddleFixtures[key].GetBody().GetPosition();
+  });
+  return {
+    ball : this._ball.GetBody().GetPosition(),
+    paddles : paddles
+  };
+};
+
+/**
+ * push paddle
+ * @param playerType [Physics.prototype.playerType]
+ * @param direction [Box2D.Common.Math.b2Vec2]
+ */
+Physics.prototype.giveImpulseToPaddle = function (playerType, direction) {
+  var paddleBody = this._paddleFixtures[playerType].GetBody();
+  paddleBody.ApplyForce(direction, paddleBody.GetWorldCenter());
+};
+
+/**
+ * Register callback for ball scored event
+ * @param callback [function (Physics.prototype.playerType)]
+ */
+Physics.prototype.onBallScored = function (callback) {
+  this._ballScored = callback;
+};
+
+Physics.prototype._init = function () {
+  var fixDef = new b2FixtureDef;
+  fixDef.density = 1;
+  fixDef.friction = 0;
+  fixDef.restitution = 0;
+
+  var that = this;
+  this._world = new b2World(
+    new b2Vec2(0, 0)    //gravity
+    , false                 //allow sleep
+  );
+
+  bodyDef.type = b2Body.b2_dynamicBody;
+  fixDef.shape = new b2PolygonShape;
+  fixDef.shape.SetAsEdge(new b2Vec2(0,0), new b2Vec2(15 , 15));
+  bodyDef.position.Set(this._width / 2 - 15/2, this._height / 2 - 15/2);
+  this._ball = this._world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+  var fixDef = new b2FixtureDef;
+  fixDef.density = 0;
+  fixDef.friction = 0;
+  fixDef.restitution = 1;
+
+  
+  // ground
+  bodyDef.type = b2Body.b2_staticBody;
+  bodyDef.position.Set(0, 0);
+  fixDef.shape = new b2PolygonShape;
+  fixDef.shape.SetAsEdge(new b2Vec2(0, 0), new b2Vec2(0, this._height));
+  
+  // left
+  this._floor = this._world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+  // right
+  bodyDef.position.Set(this._width, 0);
+  this._ceiling = this._world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+
+  var fixDef = new b2FixtureDef;
+  fixDef.density = 20;
+  fixDef.friction = 20;
+  fixDef.restitution = 0;
+
+  
+  // top wall
+  bodyDef.position.Set(0, 0);
+  fixDef.shape = new b2PolygonShape;
+  fixDef.shape.SetAsEdge(new b2Vec2(0, 0), new b2Vec2(this._width, 0));
+  this._topWall = this._world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+  // bottom wall
+  bodyDef.position.Set(0, this._height);
+  fixDef.shape.SetAsEdge(new b2Vec2(0, 0), new b2Vec2(this._width, 0));
+  this._bottomWall = this._world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+  // important callbacks
+  var contactListener = new Box2D.Dynamics.b2ContactListener();
+  contactListener.BeginContact = function (contact) {
+    var fixA = contact.GetFixtureA();
+    var fixB = contact.GetFixtureB();
+    // ball score callback
+    if (containsAll([fixA, fixB], [that._topWall, that._ball])) {
+      that._ballScored(that.playerType.BOTTOM);
+    }
+    if (containsAll([fixA, fixB], [that._bottomWall, that._ball])) {
+      that._ballScored(that.playerType.TOP);
+    }
+    if (containsAll([fixA, fixB], [that._ceiling, that._ball])) {
+      console.log('prawo');
+    }
+    if (containsAll([fixA, fixB], [that._floor, that._ball])) {
+      console.log('lewo');
+    }
+    
+    
+    console.log("contact");
+  };
+  this._world.SetContactListener(contactListener);
+};
+
+var paused = false, score = 0, scoreOpponent = 0;
+
+var box = new Physics(640, 480);
+
+box.addPaddle("top", {width : 80, height : 15});
+box.addPaddle("bottom", {width : 80, height : 15});
+
+    // add the renderer view element to the DOM
+    document.body.appendChild(renderer.view);
+ 
+    var text = new PIXI.Text("Magnetic Pong", {font:"44px PressStart2P", fill:"white"});
+    text.anchor.x = 0.5;
+    text.anchor.y = 0.5;
+    text.position.x = 320;
+    text.position.y = 200;
+    stage.addChild(text);
+
+    var text2 = new PIXI.Text("SPACE to switch the pole", {font:"16px PressStart2P", fill:"white"});
+    text2.anchor.x = 0.5;
+    text2.anchor.y = 0.5;
+    text2.position.x = 320;
+    text2.position.y = 240;
+    stage.addChild(text2);
+
+    var text22 = new PIXI.Text("A/S/Q for two player mode", {font:"12px PressStart2P", fill:"white"});
+    text22.anchor.x = 0.5;
+    text22.anchor.y = 0.5;
+    text22.position.x = 320;
+    text22.position.y = 260;
+    stage.addChild(text22);
+
+    var player = new PIXI.Graphics();
+    player.position.y = 465;
+    player.position.x = 320;
+    player.beginFill(pole ? 0xDD2222 : 0x3333EE);
+    player.drawRect(0, 0, 80, 15);
+    stage.addChild(player);
+
+    var opponent = new PIXI.Graphics();;
+    stage.addChild(opponent);
+    
+    var point = new PIXI.Graphics();
+    point.position.y = 500;
+    point.position.x = 310;
+    point.beginFill(0x3333EE);
+    point.drawRect(0, 0, 15, 15);
+
+    function dosowisko() {
+      window.open("http://dosowisko.net/");
+    }
+
+    var text3 = new PIXI.Text("dosowisko.net", {font:"12px PressStart2P", fill:"white"});
+    text3.anchor.x = 0.5;
+    text3.anchor.y = 1.0;
+    text3.position.x = 320;
+    text3.position.y = 320;
+    text3.interactive = true;
+    text3.buttonMode = true;
+    text3.defaultCursor = 'pointer';
+    text3.click = dosowisko;
+    text3.tap = dosowisko;
+    text3.mouseover = function() { document.querySelector('canvas').style.pointerEvents = "initial"; };
+    text3.mouseout = function() { document.querySelector('canvas').style.pointerEvents = "none"; };
+
+    stage.addChild(text3);
+
+    var movement, movement2;
+
+    function updateText() {
+      if (!ai) text22.text = "";
+
+      if (!started) return;
+      text.text = score + ":" + scoreOpponent;
+      text2.text = "";
+      text22.text = "";
+    }
+
+    stage.addChild(point);
+
+
+    function flap(ev) {
+      if (ev.which == 32) {
+ started = true;
+        pole = !pole;
+ev.preventDefault();
+      } else if (ev.which == 37) {
+        move = - MOVE_SPEED; movement = 37;
+      } else if (ev.which == 39) {
+        move = MOVE_SPEED; movement = 39;
+      }
+      else if (ev.which == 65) { // a
+        ai = false;
+        move2 = -MOVE_SPEED; movement2 = 65;
+      } else if (ev.which == 81) { // q
+        ai = false; poleOpponent = !poleOpponent;
+      } else if (ev.which == 83) { // s
+        ai = false; move2 = MOVE_SPEED; movement2 = 83;
+      }
+updateText();
+    }
+    
+    box.positionBall({x : box._width / 2, y : box._height / 2},
+        {x : 0.05, y: 0.5});
+    
+    box.onBallScored(function(winner) {  
+
+if (paused) return;
+
+       console.log("POINT");
+
+if (started) {
+if (winner == "bottom") {
+ score++;
+} else { scoreOpponent++; }
+updateText();
+}
+
+playSound('buzz');
+
+box.positionBall({x : box._width / 2, y : box._height / 2},
+        {x : 0, y: 0});
+
+paused = true;
+
+setTimeout(function() {
+paused = false;
+       box.positionBall({x : box._width / 2, y : box._height / 2},
+        {x : Math.random() * 2 - 1, y: (Math.random() / 2 + 0.5) * (winner == "top" ? -1 : 1)});
+}, 1000);
+    });
+    
+    document.addEventListener("keydown", flap);
+    document.addEventListener("keyup", function(ev) { if (ev.which == movement) { move = 0; movement = 0; }  if (ev.which == movement2) { move2 = 0; movement2 = 0; } });
+
+    //var Bgravity = new Box2D.b2Vec2(0, 0), Bworld = new Box2D.b2World(Bgravity);
+
+    //var Bpoint = new Box2D.b2Vec2(320 , 458), Bplayer = new Box2D.b2Vec2(320, 465 + 15/2);
+
+    requestAnimationFrame( animate );
+
+    function animate() {
+ 
+        requestAnimationFrame( animate );
+        
+
+var pos = box.getBallAndPaddlePositions();
+player.position.x = pos.paddles[1].x - 40;
+player.position.y = pos.paddles[1].y - 15 /2;
+
+
+opponent.position.x = pos.paddles[0].x - 40;
+opponent.position.y = pos.paddles[0].y - 15 / 2;
+
+point.position.x = pos.ball.x;
+point.position.y = pos.ball.y;
+
+
+        player.beginFill(pole ? 0xDD2222 : 0x3333EE);
+        player.drawRect(0, 0, 80, 15);
+
+        opponent.beginFill(poleOpponent ? 0xDD2222 : 0x3333EE);
+        opponent.drawRect(0, 0, 80, 15);
+
+        //Bplayer.x = Bplayer.x() + move);
+
+        //if (Bplayer.get_x() < 40) Bplayer.set_x(40);
+        //if (Bplayer.get_x() > 600) Bplayer.set_x(600);
+
+
+        text.updateText();
+        text2.updateText();
+        text22.updateText();
+        text3.updateText();
+
+        // render the stage   
+        renderer.render(stage);
+    }
+
+
+function applyForce(paddle, attract) {
+        var body = box._ball.GetBody();
+
+var distance = new b2Vec2(0,0);
+distance.SetV(box._paddleFixtures[paddle].GetBody().GetPosition());
+distance.Subtract(body.GetPosition());
+var  r =distance.Length();
+
+//if (r < 250) { //>
+distance.Normalize();
+var force = new b2Vec2(0,0);
+force.SetV(distance);
+force.Multiply(6 / (r*r), 3 / (r*r));
+ 
+if (!attract) {
+force.NegativeSelf();
+}
+         body.ApplyForce(force, body.GetWorldCenter());
+
+//}
+
+}
+
+    window.setInterval(function() {
+var doTick = function() {
+        box.tick(1000/120, 10);
+
+
+applyForce("bottom", pole);
+applyForce("top", poleOpponent);
+
+//        box.giveImpulseToPaddle('top', new b2Vec2(-move,0));
+        box.giveImpulseToPaddle('bottom', new b2Vec2(move,0));
+
+// AI
+
+if (ai) {
+
+var body = box._ball.GetBody();
+
+(function() {
+var distance = new b2Vec2(0,0);
+distance.SetV(box._paddleFixtures["top"].GetBody().GetPosition());
+distance.Subtract(body.GetPosition());
+
+setTimeout(function() {
+if (distance.x > 50) { //>
+box.giveImpulseToPaddle('top', new b2Vec2(-MOVE_SPEED,0));
+} else if (distance.x < -50) {
+box.giveImpulseToPaddle('top', new b2Vec2(MOVE_SPEED,0));
+}
+
+if ((distance.y > -100) && (body.m_linearVelocity.y < 0)) {
+setTimeout(function() {
+  poleOpponent = false;
+}, Math.random() * 1000);
+} else if ((distance.y < -350) && (body.m_linearVelocity.y > 0)) {
+
+
+setTimeout(function() {
+  poleOpponent = true;   
+}, Math.random() * 800);
+
+}
+
+}, Math.random() * 350 + 50);
+
+})();
+
+
+} else {
+ box.giveImpulseToPaddle('top', new b2Vec2(move2,0));
+}
+
+};
+
+doTick();
+doTick();
+
+    }, 1000/60);
+    
+  </script>
+
+<audio loop autoplay src="8bitdungeonboss.ogg"></audio>
+<audio preload="auto" src="buzz.ogg"></audio>
+
+</body>
+</html>
