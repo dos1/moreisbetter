@@ -1,4 +1,5 @@
-=== More is Better Jam ===
+More is Better Jam
+==================
 
 This repository contains my submissions for More is Better game jam.
 
