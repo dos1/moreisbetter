@@ -32,7 +32,6 @@ enum menustate_enum {
 	MENUSTATE_HIDDEN,
 	MENUSTATE_ABOUT,
 	MENUSTATE_LOST,
-	MENUSTATE_INTRO,
 	// FIXME: menustate abuse eeeeew
 };
 
@@ -53,6 +52,9 @@ struct MenuResources {
 
 		int timeTillNextBadguy, badguyRate;
 
+		bool dead;
+		int deathflash;
+
 		struct Character *ego;
 		struct Character *badguy;
 		struct Timeline *timeline;
@@ -60,10 +62,12 @@ struct MenuResources {
 		ALLEGRO_SAMPLE *sample; /*!< Music sample. */
 		ALLEGRO_SAMPLE *click_sample; /*!< Click sound sample. */
 		ALLEGRO_SAMPLE *end_sample;
+		ALLEGRO_SAMPLE *shoot_sample;
 		ALLEGRO_SAMPLE *motherlode_sample;
 		ALLEGRO_SAMPLE_INSTANCE *music; /*!< Sample instance with music sound. */
 		ALLEGRO_SAMPLE_INSTANCE *click; /*!< Sample instance with click sound. */
 		ALLEGRO_SAMPLE_INSTANCE *end;
+		ALLEGRO_SAMPLE_INSTANCE *shoot;
 		ALLEGRO_SAMPLE_INSTANCE *motherlode;
 		ALLEGRO_FONT *font_title; /*!< Font of "Super Derpy" text. */
 		ALLEGRO_FONT *font; /*!< Font of standard menu item. */
