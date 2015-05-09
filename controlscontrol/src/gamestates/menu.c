@@ -445,7 +445,6 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 
 	data->badguy = CreateCharacter(game, "badguy");
 	RegisterSpritesheet(game, data->badguy, "walk");
-	RegisterSpritesheet(game, data->badguy, "melt");
 	RegisterSpritesheet(game, data->badguy, "bigstar");
 	RegisterSpritesheet(game, data->badguy, "smallstar");
 	RegisterSpritesheet(game, data->badguy, "bullet");
@@ -518,6 +517,7 @@ void Gamestate_Start(struct Game *game, struct MenuResources* data) {
 	data->cloud_position = 100;
 	SetCharacterPosition(game, data->ego, 22, 107, 0);
 
+	data->dead = false;
 	data->score = 0;
 
 	data->keys.left = false;
@@ -543,6 +543,12 @@ void Gamestate_Start(struct Game *game, struct MenuResources* data) {
 
 	data->badguyRate = 100;
 	data->timeTillNextBadguy = 0;
+
+	int i;
+	for (i=0; i<300; i++) {
+		// fill it with stars
+		Gamestate_Logic(game, data);
+	}
 }
 
 void Gamestate_ProcessEvent(struct Game *game, struct MenuResources* data, ALLEGRO_EVENT *ev) {
