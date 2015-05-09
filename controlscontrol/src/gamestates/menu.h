@@ -35,9 +35,24 @@ enum menustate_enum {
 	// FIXME: menustate abuse eeeeew
 };
 
+enum keytypes {
+	KEYTYPE_UP,
+	KEYTYPE_DOWN,
+	KEYTYPE_RIGHT,
+	KEYTYPE_LEFT,
+	KEYTYPE_FIRE
+};
+
 /*! \brief Resources used by Menu state. */
 struct MenuResources {
 		ALLEGRO_BITMAP *bg; /*!< Bitmap with lower portion of menu landscape. */
+
+		ALLEGRO_BITMAP *keysbmp;
+		ALLEGRO_BITMAP *up;
+		ALLEGRO_BITMAP *down;
+		ALLEGRO_BITMAP *left;
+		ALLEGRO_BITMAP *right;
+		ALLEGRO_BITMAP *fire;
 
 		float badguySpeed;
 
@@ -55,6 +70,8 @@ struct MenuResources {
 		bool dead;
 		int deathflash;
 
+		int timetochange;
+
 		struct Character *ego;
 		struct Character *badguy;
 		struct Timeline *timeline;
@@ -63,11 +80,13 @@ struct MenuResources {
 		ALLEGRO_SAMPLE *click_sample; /*!< Click sound sample. */
 		ALLEGRO_SAMPLE *end_sample;
 		ALLEGRO_SAMPLE *shoot_sample;
+		ALLEGRO_SAMPLE *warning_sample;
 		ALLEGRO_SAMPLE *motherlode_sample;
 		ALLEGRO_SAMPLE_INSTANCE *music; /*!< Sample instance with music sound. */
 		ALLEGRO_SAMPLE_INSTANCE *click; /*!< Sample instance with click sound. */
 		ALLEGRO_SAMPLE_INSTANCE *end;
 		ALLEGRO_SAMPLE_INSTANCE *shoot;
+		ALLEGRO_SAMPLE_INSTANCE *warning;
 		ALLEGRO_SAMPLE_INSTANCE *motherlode;
 		ALLEGRO_FONT *font_title; /*!< Font of "Super Derpy" text. */
 		ALLEGRO_FONT *font; /*!< Font of standard menu item. */
@@ -88,6 +107,14 @@ struct MenuResources {
 				bool right;
 				bool space;
 		} keys;
+
+		struct {
+			enum keytypes up;
+			enum keytypes down;
+			enum keytypes left;
+			enum keytypes right;
+			enum keytypes space;
+		} keybase;
 
 		int score;
 };

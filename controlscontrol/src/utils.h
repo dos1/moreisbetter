@@ -39,7 +39,7 @@
 #define al_draw_tinted_rotated_bitmap(a,tint,b,c,d,e,f,g) al_draw_tinted_rotated_bitmap(a,tint,(int)(b),(int)(c),(int)(d),(int)(e), f, g)
 //#define al_draw_filled_rectangle
 //#define al_draw_prim()
-#define al_load_ttf_font(a,b,c) al_load_ttf_font(a, (int)(b / 8)*8 == 0 ? 8 : (int)(b / 8)*8, c)
+#define al_load_ttf_font(a,b,c) al_load_ttf_font(a, (int)(b / 10)*10 == 0 ? 10 : (int)(b / 10)*10, c)
 #define al_draw_text(a,b,c,d,e,f) al_draw_text(a, b, (int)(c), (int)(d), e, f)
 
 char* strdup(const char *str);

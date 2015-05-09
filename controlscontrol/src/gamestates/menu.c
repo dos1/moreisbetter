@@ -27,7 +27,7 @@
 #include "../timeline.h"
 #include "menu.h"
 
-#define SOLO_MIN 20
+#define TIME_TO_CHANGE 1000
 
 int Gamestate_ProgressCount = 6;
 
@@ -57,6 +57,10 @@ void DrawMenuState(struct Game *game, struct MenuResources *data) {
 			DrawTextWithShadow(font, data->selected==3 ? al_map_rgb(255,255,128) : al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.8, ALLEGRO_ALIGN_CENTRE, "Back");
 			break;
 		case MENUSTATE_ABOUT:
+			DrawTextWithShadow(font, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.5, ALLEGRO_ALIGN_CENTRE, "Your spaceship is being sabotaged!");
+			DrawTextWithShadow(font, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.55, ALLEGRO_ALIGN_CENTRE, "Someone is fiddling with its control");
+			DrawTextWithShadow(font, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.6, ALLEGRO_ALIGN_CENTRE, "systems. Don't lose control!");
+			DrawTextWithShadow(font, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.725, ALLEGRO_ALIGN_CENTRE, "Made for More is Better jam.");
 			DrawTextWithShadow(font, data->selected==0 ? al_map_rgb(255,255,128) : al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.8, ALLEGRO_ALIGN_CENTRE, "Back");
 			break;
 		case MENUSTATE_VIDEO:
@@ -104,6 +108,7 @@ void Die(struct Game *game, struct MenuResources *data) {
 	al_set_sample_instance_position(data->end, 0);
 	al_play_sample_instance(data->end);
 	al_stop_sample_instance(data->motherlode);
+	al_stop_sample_instance(data->warning);
 	al_set_sample_instance_gain(data->music, 1.25);
 }
 
@@ -146,7 +151,7 @@ void MoveBadguys(struct Game *game, struct MenuResources *data, int i, float dx)
 			while (bullets) {
 				if (CheckCollision(game, data, bullets->character, tmp)) {
 					colliding = true;
-					data->score += 100 * tmp->speed;
+					if (!(data->dead)) data->score += 100 * tmp->speed;
 					if (bullets->prev) {
 						bullets->prev->next = bullets->next;
 						if (bullets->next) bullets->next->prev = bullets->prev;
@@ -227,6 +232,14 @@ void DrawBadguys(struct Game *game, struct MenuResources *data, int i) {
 	}
 }
 
+ALLEGRO_BITMAP* DrawKey(struct MenuResources* data, enum keytypes key) {
+	if (key == KEYTYPE_LEFT) return data->left;
+	if (key == KEYTYPE_RIGHT) return data->right;
+	if (key == KEYTYPE_UP) return data->up;
+	if (key == KEYTYPE_DOWN) return data->down;
+	if (key == KEYTYPE_FIRE) return data->fire;
+}
+
 void Gamestate_Draw(struct Game *game, struct MenuResources* data) {
 
 	al_set_target_bitmap(al_get_backbuffer(game->display));
@@ -246,13 +259,26 @@ void Gamestate_Draw(struct Game *game, struct MenuResources* data) {
 	DrawBadguys(game, data, 3);
 
 	if (data->menustate != MENUSTATE_HIDDEN) {
-		DrawTextWithShadow(data->font_title, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.15, ALLEGRO_ALIGN_CENTRE, data->menustate == MENUSTATE_LOST ? "Radio Edited!" : "Controls Control");
+		DrawTextWithShadow(data->font_title, al_map_rgb(255,255,255), game->viewport.width*0.5, game->viewport.height*0.15, ALLEGRO_ALIGN_CENTRE, "Controls Control");
 		DrawMenuState(game, data);
 	} else {
 		char score[255];
 		snprintf(score, 255, "Score: %d", data->score);
-		DrawTextWithShadow(data->font, al_map_rgb(255,255,255), 2, game->viewport.height - 10, ALLEGRO_ALIGN_LEFT, score);
+		DrawTextWithShadow(data->font, al_map_rgb(255,255,255), 2, game->viewport.height - 12, ALLEGRO_ALIGN_LEFT, score);
 
+
+		int keysx = 320 - 59, keysy = 180 - 59 ;
+		if ((data->timetochange / 15 <= 8) && (data->timetochange % 30 < 15)) {
+			al_draw_tinted_bitmap(data->keysbmp, al_map_rgb(255,0,0), keysx, keysy, 0);
+		} else {
+			al_draw_bitmap(data->keysbmp, keysx, keysy, 0);
+		}
+
+		al_draw_bitmap(DrawKey(data, data->keybase.left), keysx, keysy+19, 0);
+		al_draw_bitmap(DrawKey(data, data->keybase.right), keysx+39, keysy+19, 0);
+		al_draw_bitmap(DrawKey(data, data->keybase.up), keysx+19, keysy, 0);
+		al_draw_bitmap(DrawKey(data, data->keybase.down), keysx+19, keysy+19, 0);
+		al_draw_bitmap(DrawKey(data, data->keybase.space), keysx+19, keysy+39, 0);
 	}
 
 	if (data->deathflash) {
@@ -295,6 +321,28 @@ void AddBadguy(struct Game *game, struct MenuResources* data, int i) {
 	}
 }
 
+void ChangeKeys(struct Game *game, struct MenuResources *data) {
+	PrintConsole(game, "KEYS sHOULD CHANGE NOW");
+
+	int array[5] = {0, 1, 2, 3, 4};
+
+	int n = 5;
+	size_t i;
+	for (i = 0; i < n - 1; i++)
+	{
+		size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+		int t = array[j];
+		array[j] = array[i];
+		array[i] = t;
+	}
+
+	data->keybase.left = array[0];
+	data->keybase.right = array[1];
+	data->keybase.up = array[2];
+	data->keybase.down = array[3];
+	data->keybase.space = array[4];
+}
+
 void Fire(struct Game *game, struct MenuResources *data) {
 
 	data->usage=10;
@@ -303,6 +351,29 @@ void Fire(struct Game *game, struct MenuResources *data) {
 	al_play_sample_instance(data->shoot);
 
 	AddBadguy(game, data, 3);
+}
+
+void DoAction(struct Game *game, struct MenuResources* data, enum keytypes key) {
+
+	if (key == KEYTYPE_UP) {
+		MoveCharacter(game, data->ego, 0, -1, 0);
+	}
+
+	if (key == KEYTYPE_DOWN) {
+		MoveCharacter(game, data->ego, 0, 1, 0);
+	}
+
+	if (key == KEYTYPE_LEFT) {
+		MoveCharacter(game, data->ego, -1, 0, 0);
+	}
+
+	if (key == KEYTYPE_RIGHT) {
+		MoveCharacter(game, data->ego, 1, 0, 0);
+	}
+
+	if ((key == KEYTYPE_FIRE) && (data->usage==0)) {
+		Fire(game, data);
+	}
 }
 
 void Gamestate_Logic(struct Game *game, struct MenuResources* data) {
@@ -314,32 +385,40 @@ void Gamestate_Logic(struct Game *game, struct MenuResources* data) {
 
 	if (data->menustate == MENUSTATE_HIDDEN) {
 
+		data->timetochange--;
+
+		if (data->timetochange < 0) {
+			ChangeKeys(game, data);
+			data->timetochange = TIME_TO_CHANGE;
+		}
+		if (data->timetochange == 120) {
+			al_play_sample_instance(data->warning);
+		}
 
 		if (data->keys.up) {
-			MoveCharacter(game, data->ego, 0, -1, 0);
+			DoAction(game, data, data->keybase.up);
 		}
 
 		if (data->keys.down) {
-			MoveCharacter(game, data->ego, 0, 1, 0);
+			DoAction(game, data, data->keybase.down);
 		}
 
 		if (data->keys.left) {
-			MoveCharacter(game, data->ego, -1, 0, 0);
+			DoAction(game, data, data->keybase.left);
 		}
 
 		if (data->keys.right) {
-			MoveCharacter(game, data->ego, 1, 0, 0);
+			DoAction(game, data, data->keybase.right);
+		}
+
+		if (data->keys.space) {
+			DoAction(game, data, data->keybase.space);
 		}
 
 		if (data->ego->x < 0) data->ego->x = 0;
 		if (data->ego->y < 0) data->ego->y = 0;
 		if (data->ego->x > 320 - 37) data->ego->x = 320 - 37;
 		if (data->ego->y > 180 - 16) data->ego->y = 180 - 16;
-
-
-		if ((data->keys.space) && (data->usage==0)) {
-			Fire(game, data);
-		}
 
 		}
 
@@ -401,9 +480,18 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 
 	data->bg = al_load_bitmap( GetDataFilePath(game, "bg.png") );
 
+	data->keysbmp = al_load_bitmap( GetDataFilePath(game, "keys.png") );
+	data->left = al_load_bitmap( GetDataFilePath(game, "left.png") );
+	data->right = al_load_bitmap( GetDataFilePath(game, "right.png") );
+	data->up = al_load_bitmap( GetDataFilePath(game, "up.png") );
+	data->down = al_load_bitmap( GetDataFilePath(game, "down.png") );
+	data->fire = al_load_bitmap( GetDataFilePath(game, "fire.png") );
+
+
 	data->sample = al_load_sample( GetDataFilePath(game, "bg.ogg") );
 	(*progress)(game);
 	data->click_sample = al_load_sample( GetDataFilePath(game, "click.flac") );
+	data->warning_sample = al_load_sample( GetDataFilePath(game, "warning.flac") );
 	data->end_sample = al_load_sample( GetDataFilePath(game, "end.flac") );
 	data->shoot_sample = al_load_sample( GetDataFilePath(game, "shoot.flac") );
 	(*progress)(game);
@@ -422,6 +510,10 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	al_attach_sample_instance_to_mixer(data->click, game->audio.fx);
 	al_set_sample_instance_playmode(data->click, ALLEGRO_PLAYMODE_ONCE);
 
+	data->warning = al_create_sample_instance(data->warning_sample);
+	al_attach_sample_instance_to_mixer(data->warning, game->audio.fx);
+	al_set_sample_instance_playmode(data->warning, ALLEGRO_PLAYMODE_ONCE);
+
 	data->shoot = al_create_sample_instance(data->shoot_sample);
 	al_attach_sample_instance_to_mixer(data->shoot, game->audio.fx);
 	al_set_sample_instance_playmode(data->shoot, ALLEGRO_PLAYMODE_ONCE);
@@ -435,8 +527,8 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 		exit(-1);
 	}
 
-	data->font_title = al_load_ttf_font(GetDataFilePath(game, "fonts/MonkeyIsland.ttf"),game->viewport.height*0.16,0 );
-	data->font = al_load_ttf_font(GetDataFilePath(game, "fonts/MonkeyIsland.ttf"),game->viewport.height*0.05,0 );
+	data->font_title = al_load_ttf_font(GetDataFilePath(game, "fonts/joystix.ttf"),game->viewport.height*0.15,0 );
+	data->font = al_load_ttf_font(GetDataFilePath(game, "fonts/joystix.ttf"),game->viewport.height*0.1,0 );
 	(*progress)(game);
 
 	data->ego = CreateCharacter(game, "ego");
@@ -485,6 +577,12 @@ void Gamestate_Stop(struct Game *game, struct MenuResources* data) {
 
 void Gamestate_Unload(struct Game *game, struct MenuResources* data) {
 	al_destroy_bitmap(data->bg);
+	al_destroy_bitmap(data->keysbmp);
+	al_destroy_bitmap(data->down);
+	al_destroy_bitmap(data->up);
+	al_destroy_bitmap(data->right);
+	al_destroy_bitmap(data->left);
+	al_destroy_bitmap(data->fire);
 	al_destroy_font(data->font_title);
 	al_destroy_font(data->font);
 	al_destroy_sample_instance(data->music);
@@ -514,6 +612,7 @@ void StartGame(struct Game *game, struct MenuResources *data) {
 
 void Gamestate_Start(struct Game *game, struct MenuResources* data) {
 	data->deathflash = 0;
+	data->timetochange = TIME_TO_CHANGE;
 	data->cloud_position = 100;
 	SetCharacterPosition(game, data->ego, 22, 107, 0);
 
@@ -525,6 +624,12 @@ void Gamestate_Start(struct Game *game, struct MenuResources* data) {
 	data->keys.up = false;
 	data->keys.down = false;
 	data->keys.space = false;
+
+	data->keybase.left = KEYTYPE_LEFT;
+	data->keybase.right = KEYTYPE_RIGHT;
+	data->keybase.up = KEYTYPE_UP;
+	data->keybase.down = KEYTYPE_DOWN;
+	data->keybase.space = KEYTYPE_FIRE;
 
 	data->badguySpeed = 1.2;
 
@@ -554,10 +659,6 @@ void Gamestate_Start(struct Game *game, struct MenuResources* data) {
 void Gamestate_ProcessEvent(struct Game *game, struct MenuResources* data, ALLEGRO_EVENT *ev) {
 	TM_HandleEvent(data->timeline, ev);
 
-	if ((data->menustate == MENUSTATE_ABOUT) && (ev->type == ALLEGRO_EVENT_KEY_DOWN)) {
-		ChangeMenuState(game, data, MENUSTATE_MAIN);
-		return;
-	}
 
 	if (data->menustate == MENUSTATE_HIDDEN) {
 
@@ -613,6 +714,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct MenuResources* data, ALLEG
 		if ((data->selected == 2) && ((data->menustate==MENUSTATE_VIDEO) || (data->menustate==MENUSTATE_OPTIONS) || (data->menustate==MENUSTATE_AUDIO))) {
 			data->selected --;
 		}
+		if (data->menustate==MENUSTATE_ABOUT) data->selected = 0;
 		if ((data->menustate==MENUSTATE_VIDEO) && (data->selected==1) && (data->options.fullscreen)) data->selected--;
 		al_play_sample_instance(data->click);
 	} else if (ev->keyboard.keycode==ALLEGRO_KEY_DOWN) {
@@ -621,6 +723,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct MenuResources* data, ALLEG
 		if ((data->selected == 2) && ((data->menustate==MENUSTATE_VIDEO) || (data->menustate==MENUSTATE_OPTIONS) || (data->menustate==MENUSTATE_AUDIO))) {
 			data->selected ++;
 		}
+		if (data->menustate==MENUSTATE_ABOUT) data->selected = 0;
 
 
 		al_play_sample_instance(data->click);
@@ -747,6 +850,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct MenuResources* data, ALLEG
 				}
 				break;
 			case MENUSTATE_ABOUT:
+				ChangeMenuState(game,data,MENUSTATE_MAIN);
 				break;
 			case MENUSTATE_LOST:
 				pos = al_get_sample_instance_position(data->music);
