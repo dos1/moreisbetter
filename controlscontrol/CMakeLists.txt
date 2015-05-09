@@ -41,19 +41,19 @@ add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_D
 
 INCLUDE(InstallRequiredSystemLibraries)
 
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Don't allow the bad record labels to radio edit your amazing single!")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Your spaceship is being sabotaged! Someone is messing with its control systems. Don't lose control!")
 SET(CPACK_PACKAGE_VENDOR "Sebastian Krzyszkowiak")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 SET(CPACK_PACKAGE_VERSION_MAJOR "0")
 SET(CPACK_PACKAGE_VERSION_MINOR "1")
-SET(CPACK_PACKAGE_VERSION_PATCH "3")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Radio Edit")
+SET(CPACK_PACKAGE_VERSION_PATCH "0")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Controls Control")
 IF(WIN32 AND NOT UNIX)
   # There is a bug in NSI that does not handle full unix paths properly. Make
   # sure there is at least one set of four (4) backlasshes.
   SET(CPACK_GENERATOR "NSIS")
   SET(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\controlscontrol.exe")
-  SET(CPACK_NSIS_DISPLAY_NAME "Radio Edit")
+  SET(CPACK_NSIS_DISPLAY_NAME "Controls Control")
   SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\dosowisko.net")
   SET(CPACK_NSIS_CONTACT "dos@dosowisko.net")
   SET(CPACK_NSIS_CREATE_ICONS "CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${CPACK_NSIS_DISPLAY_NAME}.lnk' '\$INSTDIR\\\\bin\\\\controlscontrol.exe'")
