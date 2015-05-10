@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PRESS SPACE</title>
+<style>
+  @font-face {
+    font-family: 'Carbon';
+    src: url('carbon.ttf') format('truetype');
+  }
+body {
+  font-family: "Carbon", "Impact", sans-serif;
+  background-color: black;
+  color: white;
+  text-align: center;
+}
+.color {
+  position: absolute;
+  background-color: red;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  display: none;
+}
+.game {
+margin: 0 auto;
+width: 500px;
+height: 250px;
+padding-top:250px;
+}
+.game p {
+margin: 0;
+font-size: 50px;
+}
+a { color: white; }
+</style>
+<script src="jquery.js"></script>
+<script>
+$(function() {
+
+  var visible = false;
+  var press = false;
+
+  var score = 0, times = 0;
+
+  var left = 6;
+
+  setInterval(function() {
+    $('.game p').show();
+    visible = true;
+
+    if (press) {
+      score--;
+      $('.score').text(score);
+      $('.color').css('background-color', 'red');
+      $('.color').stop(true, true).show().delay(50).fadeOut(450);
+    }
+
+    if (left<=0) { //>
+      left = Math.random() * 10;
+      press = true;
+      $('.game p').text('PRESS SPACE');
+    } else {
+      press = false;
+      $('.game p').text('DON\'T PRESS SPACE');
+    }
+    left--;    
+
+    setTimeout(function() {
+      $('.game p').hide();
+      visible = false;
+    }, 250 - times);
+
+    times++;
+  }, 500 - times*2);
+
+  function fire() {
+
+    if (press) {
+      $('.color').css('background-color', 'green');
+      score++;
+      press = false;
+    } else {
+      $('.color').css('background-color', 'red'); 
+      score--;
+    }
+
+    $('.score').text(score);
+
+    $('.color').stop(true, true).show().delay(50).fadeOut(450);
+  }
+
+  $(document).on('keydown', function(ev) {
+    if (ev.which == 32) fire();
+  });
+
+  $(document).on('mousedown touchstart', fire);
+
+});
+</script>
+</head>
+<body>
+<div class="color"></div>
+<div class="game">
+<p>DON'T PRESS SPACE</p>
+</div>
+<p>SCORE: <span class="score">0</span> | <a href="http://dosowisko.net/" target="_blank">dosowisko.net</a></p>
+</body>
+</html>
