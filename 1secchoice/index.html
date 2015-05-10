@@ -293,7 +293,7 @@ function shuffle(array) {
     $('.red.button').text(answers[0]);
     $('.green.button').text(answers[1]);
     $('.blue.button').text(answers[2]);
-    timeout = setTimeout(function() { lost("Time's up!"); }, 1000);
+    timeout = setTimeout(function() { lost("Time's up!"); }, (score === 0) ? 1500 : 1000);
     started = true;
   }
 
