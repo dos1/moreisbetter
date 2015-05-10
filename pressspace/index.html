@@ -39,64 +39,78 @@ a { color: white; }
 <script>
 $(function() {
 
-  var visible = false;
-  var press = false;
+  var started = false;
 
-  var score = 0, times = 0;
+  function start() {
 
-  var left = 6;
+    var visible = false;
+    var press = false;
 
-  setInterval(function() {
-    $('.game p').show();
-    visible = true;
+    var score = 0, times = 0;
 
-    if (press) {
-      score--;
+    var left = 6;
+
+    $('.game p').hide();
+
+    setInterval(function() {
+      $('.game p').show();
+      visible = true;
+
+      if (press) {
+        score--;
+        $('.score').text(score);
+        $('.color').css('background-color', 'red');
+        $('.color').stop(true, true).show().delay(50).fadeOut(450);
+      }
+
+      if (left<=0) {
+        left = Math.random() * 10;
+        press = true;
+        $('.game p').text('PRESS SPACE');
+      } else {
+        press = false;
+        $('.game p').text('DON\'T PRESS SPACE');
+      }
+      left--;    
+
+      setTimeout(function() {
+        $('.game p').hide();
+        visible = false;
+      }, 250 - times);
+
+      times++;
+      if (times>100) times=100;
+    }, 500 - times*2);
+
+    function fire() {
+
+      if (press) {
+        $('.color').css('background-color', 'green');
+        score++;
+        press = false;
+      } else {
+        $('.color').css('background-color', 'red'); 
+        score--;
+      }
+
       $('.score').text(score);
-      $('.color').css('background-color', 'red');
+
       $('.color').stop(true, true).show().delay(50).fadeOut(450);
     }
 
-    if (left<=0) { //>
-      left = Math.random() * 10;
-      press = true;
-      $('.game p').text('PRESS SPACE');
-    } else {
-      press = false;
-      $('.game p').text('DON\'T PRESS SPACE');
-    }
-    left--;    
+    $(document).on('keydown', function(ev) {
+      if (ev.which == 32) fire();
+    });
 
-    setTimeout(function() {
-      $('.game p').hide();
-      visible = false;
-    }, 250 - times);
+    $(document).on('mousedown touchstart', fire);
 
-    times++;
-    if (times>100) times=100;
-  }, 500 - times*2);
-
-  function fire() {
-
-    if (press) {
-      $('.color').css('background-color', 'green');
-      score++;
-      press = false;
-    } else {
-      $('.color').css('background-color', 'red'); 
-      score--;
-    }
-
-    $('.score').text(score);
-
-    $('.color').stop(true, true).show().delay(50).fadeOut(450);
   }
 
-  $(document).on('keydown', function(ev) {
-    if (ev.which == 32) fire();
+  $(document).on('click', function() {
+    if (!started) {
+      start(); started = true;
+    }
   });
-
-  $(document).on('mousedown touchstart', fire);
 
 });
 </script>
@@ -104,7 +118,7 @@ $(function() {
 <body>
 <div class="color"></div>
 <div class="game">
-<p>DON'T PRESS SPACE</p>
+<p>CLICK TO START</p>
 </div>
 <p>SCORE: <span class="score">0</span> | <a href="http://dosowisko.net/" target="_blank">dosowisko.net</a></p>
 </body>
