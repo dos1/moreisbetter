@@ -99,7 +99,7 @@ $(function() {
     }
 
     $(document).on('keydown', function(ev) {
-      if (ev.which == 32) fire();
+      if (ev.which == 32) { fire(); ev.preventDefault(); }
     });
 
     $(document).on('mousedown touchstart', fire);
