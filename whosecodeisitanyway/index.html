@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Whose Code Is It Anyway?</title>
+
+<link rel="stylesheet" href="https://highlightjs.org/static/styles/monokai_sublime.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/highlight.min.js"></script>
+
+<style>
+  @font-face {
+    font-family: 'C64';
+    src: url('C64_Pro_Mono-STYLE.ttf') format('truetype');
+  }
+body {
+  font-family: "C64", monospace;
+  background-color: black;
+  color: lime;
+  text-align: center;
+  text-shadow: 0px 0px 4px rgba(0, 255, 0, 0.75);
+}
+a { color: white; }
+
+code.hljs {
+  background-color: rgba(0,0,0,0.1) !important;
+}
+
+.wrapper {
+width: 900px;
+border: 5px solid lime;
+position: relative;
+margin: 0 auto;
+box-shadow: 0px 0px 25px lime inset;
+background-image: linear-gradient(to bottom , #000 75%, #003200 96%, #0a330a 15%);
+background-size: 1px 8px;
+padding: 10px;
+}
+
+pre { text-align: left; text-shadow: none; padding: 10px;   border-top: 5px solid lime; height: 400px; overflow: auto;
+}
+
+.hljs, .hljs-tag, .css .hljs-rules, .css .hljs-value, .css .hljs-function .hljs-preprocessor, .hljs-pragma {
+font-family: "C64", monospace;
+ }
+
+h1 { color: white; text-shadow: 0px 0px 4px rgba(255,255,255,0.5); }
+
+.lang { color: white; text-shadow: 0px 0px 4px rgba(255,255,255,0.75); }
+
+.stats {
+  border-top: 5px solid lime; border-bottom: 5px solid lime;
+  padding: 0px 25px;
+}
+
+
+.answers { margin-bottom: 20px; }
+
+.answers a {
+  display: inline-block;
+  border: 5px solid lime;
+  padding: 20px;
+  text-align: left;
+  color: white;
+  text-decoration: none;
+  margin: 1%;
+  width: 46%;
+  box-sizing: border-box;
+}
+
+.error {
+  background-color: rgba(0,0,0,0.75);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 32px;
+  padding-top: 40%;
+  box-sizing: border-box;
+  text-shadow: 0px 0px 10px lime;
+}
+
+</style>
+<script src="jquery.js"></script>
+<script>
+$(function() {
+  hljs.initHighlightingOnLoad();
+});
+</script>
+</head>
+<body>
+
+<div class="wrapper">
+
+<div class="error">Backend server is down :(<br/>Try again later!</div>
+
+<h1>Whose Code Is It Anyway?</h1>
+
+<p>Try to guess from which free software project<br/>comes this snippet of <span class="lang">C</span> code!</p>
+
+<pre><code class="c">		amp_ctrl_put(ctrl);
+	}
+	mutex_unlock(&mgr->amp_ctrls_lock);
+}
+
+struct amp_ctrl *amp_ctrl_lookup(struct amp_mgr *mgr, u8 id)
+{
+	struct amp_ctrl *ctrl;
+
+	BT_DBG("mgr %p id %d", mgr, id);
+
+	mutex_lock(&mgr->amp_ctrls_lock);
+	list_for_each_entry(ctrl, &mgr->amp_ctrls, list) {
+		if (ctrl->id == id) {
+			amp_ctrl_get(ctrl);
+			mutex_unlock(&mgr->amp_ctrls_lock);
+			return ctrl;
+		}
+	}
+	mutex_unlock(&mgr->amp_ctrls_lock);
+
+	return NULL;
+}
+
+/* Physical Link interface */
+static u8 __next_handle(struct amp_mgr *mgr)
+{
+	if (++mgr->handle == 0)</code></pre>
+
+<p>&nbsp;</p>
+
+<div class="answers">
+<a href="#">A. Linux</a>
+<a href="#">B. git</a>
+<a href="#">C. emacs</a>
+<a href="#">D. GTK+</a>
+
+</div>
+
+<div class="stats">
+<p style="text-align: right; float: right">Score: <span class="score">0</span></p>
+<p style="text-align: left; float: left">Lifelines: <a href="#">50-50</a>, <a href="#">more lines</a>, <a href="#">file path</a></p>
+<br style="clear:both" />
+</div>
+
+<p style="clear: both"><a href="http://dosowisko.net/" target="_blank">dosowisko.net</a></p>
+
+</div>
+
+<!--
+<audio autoplay loop src="ittybitty8bit.ogg"></audio>
+-->
+</body>
+</html>
