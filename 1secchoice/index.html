@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>1 sec choice</title>
+<link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+<style>
+body {
+  font-family: "Open Sans", sans-serif;
+  font-weight: 300;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background-color: #eee;
+  padding: 25px;
+}
+.wrapper {
+  width: 640px;
+  height: 573px;
+  background-image: url('bg.jpg');
+  margin: 0 auto;
+  position: relative;
+  margin-top: -573px;
+  z-index: 0;
+  overflow: hidden;
+}
+.blur {
+  width: 640px;
+  height: 573px;
+  background-image: url('bg.jpg');
+  margin: 0 auto;
+  display: block;
+  -webkit-filter: blur(20px);
+  filter: blur(20px);
+  z-index: -3;
+}
+a { color: black; text-decoration: none; border-bottom: 1px solid #555; }
+
+.pasek {
+  background-color: rgba(255, 255, 255, 0.5);
+  position: absolute;
+  left: 0;
+  width: 100%;
+  padding-top: 20px;
+  height: 60px;
+  transition: top 0.5s ease-in-out, bottom 0.5s ease-in-out, height 0.5s ease-in-out, box-shadow 0.5s;
+  overflow: hidden;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.pasek:before {
+  position: absolute;
+  content: "";
+  background-image: url('bg.jpg');
+  background-attachment: fixed;
+  background-position: center 25px;
+  background-repeat: repeat-y;
+  background-size: 650px 573px;
+  -webkit-filter: blur(5px);
+  filter: blur(5px);
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  z-index: -1;
+}
+
+
+.pasek1 {
+  bottom: 50%;
+  height: 90px;
+  box-shadow: 0px -3px 2px rgba(0, 0, 0, 0.1);
+}
+.pasek2 {
+  top: 50%;
+  box-shadow: 0px 3px 2px rgba(0, 0, 0, 0.15);
+}
+
+.started .pasek1 { bottom: 66%; height: 11%; box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25); }
+.started .pasek2 { top: 54%; height: 25%; box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25); }
+
+.dosowisko {
+  height: auto;
+  padding: 5px 0;
+  bottom: 0;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px;
+  border: 1px solid #666;
+  border-radius: 5px;
+  transition: background-color 0.25s;
+}
+.button:hover {
+  background-color: rgba(255,255,255,0.25);
+}
+
+h1 {
+  margin: 0;
+  padding: 0;
+}
+
+.content .buttons {
+  display: none;
+}
+
+.big.button {
+  padding: 50px;
+  width: 15%;
+  border-radius: 0;
+}
+
+.big.button:hover {
+  background-color: rgba(255,255,255,0.25);
+}
+
+.red.button { color: red; border-color: red; background-color: rgba(255, 0, 0, 0.1); }
+.green.button { color: green; border-color: green; background-color: rgba(0, 255, 0, 0.1); }
+.blue.button { color: blue; border-color: blue; background-color: rgba(0, 0, 255, 0.1);}
+
+</style>
+<script src="jquery.js"></script>
+<script>
+$(function() {
+
+  var thingies = [
+'time',
+'year',
+'people',
+'way',
+'day',
+'man',
+'thing',
+'woman',
+'life',
+'child',
+'world',
+'school',
+'state',
+'family',
+'student',
+'group',
+'country',
+'problem',
+'hand',
+'part',
+'place',
+'case',
+'week',
+'company',
+'system',
+'issue',
+'side',
+'kind',
+'head',
+'house',
+'service',
+'friend',
+'father',
+'power',
+'hour',
+'game',
+'line',
+'end',
+'member',
+'law',
+'car',
+'city',
+'community',
+'name',
+'president',
+'team',
+'minute',
+'idea',
+'kid',
+'body',
+'program',
+'question',
+'work',
+'government',
+'number',
+'night',
+'point',
+'home',
+'water',
+'room',
+'mother',
+'area',
+'money',
+'storey',
+'fact',
+'month',
+'lot',
+'right',
+'study',
+'book',
+'eye',
+'job',
+'word',
+'business',
+'information',
+'back',
+'parent',
+'face',
+'others',
+'level',
+'office',
+'door',
+'health',
+'person',
+'art',
+'sex',
+'war',
+'history',
+'party',
+'result',
+'change',
+'morning',
+'reason',
+'research',
+'girl',
+'guy',
+'food',
+'moment',
+'air',
+'teacher',
+'love',
+'programmer',
+'guitar',
+'ukulele',
+'browser',
+'cookie'
+];
+
+  var started = false, score = 0, timeout = null;
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex ;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+  function lost(msg) {
+    if (timeout) { clearTimeout(timeout); timeout = null; }
+    started = false;
+    $('.content').fadeOut(400);
+    setTimeout( function() { $('body').removeClass('started'); }, 500);
+    setTimeout( function() {
+
+      $('h1').text(msg).css('color','black');
+      $('.content p').text('Score: ' + score);
+      $('.start.button').show();
+      $('.content .buttons').hide();
+
+      $('.content').fadeIn(500);
+    }, 1000);
+  }
+
+  function tick() {
+
+    var colors = ['red', 'green', 'blue'];
+
+    var thingie = thingies[Math.floor(Math.random() * thingies.length)];
+    $('h1').text(thingie);
+    var answers = [thingie, thingies[Math.floor(Math.random() * thingies.length)], thingies[Math.floor(Math.random() * thingies.length)]];
+
+    if ((score >= 25) && (Math.random() < 0.2)) { //>
+      thingie = colors[Math.floor(Math.random()*colors.length)];
+      answers = colors.slice();
+    }
+
+    $('h1').text(thingie);
+    shuffle(answers);
+
+    if (score < 15) { //>
+      $('h1').css('color', colors[answers.indexOf(thingie)]);
+    } else if (score >= 15) {
+      $('h1').css('color', colors[Math.floor(Math.random()*colors.length)]);
+    }
+
+    $('.red.button').text(answers[0]);
+    $('.green.button').text(answers[1]);
+    $('.blue.button').text(answers[2]);
+    timeout = setTimeout(function() { lost("Time's up!"); }, 1000);
+    started = true;
+  }
+
+  function checkAnswer() {
+    if (timeout) { clearTimeout(timeout); timeout = null; }
+    if (!started) return;
+    started = false;
+    if ($(this).text() === $('h1').text()) {
+      score++;
+      tick();
+    } else {
+      lost("Wrong answer!");
+    }
+  }
+
+  $('body').on('click', '.big.button', checkAnswer);
+
+  $('.start').on('click', function() {
+    if (started) return;
+    started = true; score = 0;
+    $('.content').fadeOut(400);
+    setTimeout( function() { $('body').addClass('started'); }, 500);
+
+    setTimeout( function() {
+
+      $('.content p').html('');
+      $('.start.button').hide();
+      $('.content .buttons').show();
+
+      tick();
+
+      $('.content').fadeIn(500);
+    }, 1000);
+  });
+
+});
+</script>
+</head>
+<body>
+
+<div class="blur"></div>
+
+<div class="wrapper">
+
+<div class="pasek pasek1">
+  <div class="content">
+    <h1>1 sec choice</h1>
+    <p>Just choose what you're told to.</p>
+  </div>
+</div>
+<div class="pasek pasek2">
+  <div class="content">
+    <a href="#" class="button start">Start game</a>
+
+    <div class="buttons">
+      <a href="#" class="button big red">red</a>
+      <a href="#" class="button big green">green</a>
+      <a href="#" class="button big blue">blue</a>
+    </div>
+  </div>
+</div>
+
+<div class="pasek dosowisko">
+<a href="http://dosowisko.net/" target="_blank">dosowisko.net</a>
+</div>
+
+</div>
+
+</body>
+</html>
