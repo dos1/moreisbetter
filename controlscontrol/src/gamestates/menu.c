@@ -527,8 +527,10 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 		exit(-1);
 	}
 
-	data->font_title = al_load_ttf_font(GetDataFilePath(game, "fonts/joystix.ttf"),game->viewport.height*0.15,0 );
-	data->font = al_load_ttf_font(GetDataFilePath(game, "fonts/joystix.ttf"),game->viewport.height*0.1,0 );
+	data->font_title = al_load_ttf_font(GetDataFilePath(game, "fonts/joystix.ttf"),(int)(game->viewport.height*0.15), 
+ALLEGRO_TTF_MONOCHROME );
+	data->font = al_load_ttf_font(GetDataFilePath(game, "fonts/joystix.ttf"),(int)(game->viewport.height*0.1), 
+ALLEGRO_TTF_MONOCHROME );
 	(*progress)(game);
 
 	data->ego = CreateCharacter(game, "ego");
